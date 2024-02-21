@@ -62,57 +62,53 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-	HAL_Init(); // Reset of all peripherals, init the Flash and Systick
-	SystemClock_Config(); //Configure the system clock
-	/* This example uses HAL library calls to control
-	the GPIOC peripheral. You’ll be redoing this code
-	with hardware register access. */
-	RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the GPIOC clock in the RCC
-	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; 
-	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; // Enable the TIM2 & TIM3 clock in the RCC
-	//uint32_t click = 0;
-	
-	GPIOC->MODER |= (0x1<<13) |  (0x1<<15) |  (0x1<<16) | (0x1<<18);
-	GPIOC->MODER &= ~(0x1<<12);
-	GPIOC->MODER &= ~(0x1<<14);
-	GPIOC->OTYPER &= ~(0b1<<6) | (0b1<<7) | (0b1<<8) | (0b1<<9);
-	GPIOC->OSPEEDR &= ~(0x1<<12) | (0x0<<13) | (0x1<<14) | (0x0<<15) | (0x1<<16) | (0x0<<17) | (0x1<<18) | (0x0<<19);
-	GPIOC->PUPDR &= ~(0x1<<12) | (0x1<<13) | (0x1<<14) | (0x1<<15) | (0x1<<16) | (0x1<<17) | (0x1<<18) | (0x1<<19);
-	
-	TIM2->PSC = 0x1F3F;
-	TIM2->ARR = 0xFA;
-	TIM2->DIER |= (0x1<<0);
-	TIM2->CR1 |= (0x1<<0);
-	
-	TIM3->PSC = 499;
-	TIM3->ARR = 20;
-	TIM3->CCMR1 &= ~(0x1<<0) | (0x1<<1);
-	TIM3->CCMR2 &= ~(0x1<<0) | (0x1<<1);
-	TIM3->CCMR1 &= ~(0x1<<8) | (0x1<<9);
-	TIM3->CCMR2 &= ~(0x1<<8) | (0x1<<9);
-	TIM3->CCMR1 |= (0x1<<4) | (0x1<<5) | (0x1<<6);
-	TIM3->CCMR1 |= (0x1<<12) | (0x1<<13);
-	TIM3->CCMR1 &= ~(0x1<<14);
-	TIM3->CCMR2 |= (0x1<<4) | (0x1<<5) | (0x1<<6);
-	TIM3->CCMR2 |= (0x1<<12) | (0x1<<13);
-	TIM3->CCMR2 &= ~(0x1<<14);
-	TIM3->CCMR1 |= (0x1<<11) | (0x1<<3);
-	TIM3->CCMR2 |= (0x1<<11) | (0x1<<3);
-	TIM3->CCER |= (0x1<<0) | (0x1<<4);
-	TIM3->CCR1 |= 16;
-	TIM3->CCR2 |= 16;
-	TIM3->CR1 |= (0x1<<0);
-	GPIOC->AFR[0] &= ~(GPIO_AFRL_AFSEL6 | GPIO_AFRL_AFSEL7) ;
-	
-	NVIC_EnableIRQ(TIM2_IRQn);
-	NVIC_SetPriority(TIM2_IRQn,1);
-	
-	GPIOC->ODR |= (0x1<<9);
+  HAL_Init(); // Reset of all peripherals, init the Flash and Systick
+  SystemClock_Config(); //Configure the system clock
+  /* This example uses HAL library calls to control
+  the GPIOC peripheral. Youâ€™ll be redoing this code
+  with hardware register access. */
+  RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the GPIOC clock in the RCC
+  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; 
+  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; // Enable the TIM2 & TIM3 clock in the RCC
+  //uint32_t click = 0;
+  
+  GPIOC->MODER |= (0x1<<13) |  (0x1<<15) |  (0x1<<16) | (0x1<<18);
+  GPIOC->MODER &= ~(0x1<<12);
+  GPIOC->MODER &= ~(0x1<<14);
+  GPIOC->OTYPER &= ~(0b1<<6) | (0b1<<7) | (0b1<<8) | (0b1<<9);
+  GPIOC->OSPEEDR &= ~(0x1<<12) | (0x0<<13) | (0x1<<14) | (0x0<<15) | (0x1<<16) | (0x0<<17) | (0x1<<18) | (0x0<<19);
+  GPIOC->PUPDR &= ~(0x1<<12) | (0x1<<13) | (0x1<<14) | (0x1<<15) | (0x1<<16) | (0x1<<17) | (0x1<<18) | (0x1<<19);
+  
+  TIM2->PSC = 0x1F3F;
+  TIM2->ARR = 0xFA;
+  TIM2->DIER |= (0x1<<0);
+  TIM2->CR1 |= (0x1<<0);
+  
+  TIM3->PSC = 499;
+  TIM3->ARR = 20;
+  
+  TIM3->CCMR1 &= ~((1<<0)|(1<<1)|(1<<9)|(1<<8)|(1<<12));
+  TIM3->CCMR1 |= ((1<<4)|(1<<5)|(1<<6)|(1<<13)|(1<<14)|(1<<3)|(1<<11));
+  TIM3->CCER |= (0x1<<0) | (0x1<<4);
+  
+  TIM3->CCR1 |= 19;
+  TIM3->CCR2 |= 1;
+  
+  TIM3->DIER |= (0x1<<0);
+  TIM3->CR1 |= (0x1<<0);
+  GPIOC->AFR[0] &= ~(GPIO_AFRL_AFSEL6 | GPIO_AFRL_AFSEL7) ;
+  
+  NVIC_EnableIRQ(TIM2_IRQn);
+  NVIC_SetPriority(TIM2_IRQn,1);
+  
+  GPIOC->ODR |= (0x1<<9);
 
-	
-	while (1) {
 
-	}
+  
+  while (1) {
+
+
+  }
 }
 
 /**
