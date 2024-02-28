@@ -49,6 +49,37 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+volatile uint8_t newdata = 0; 
+volatile uint8_t led = NULL , operation = NULL;
+
+void UART3_SendChar(char c){
+	USART3->TDR = c;  
+	//while (!(USART3->ISR & USART_ISR_TC));
+}
+
+void UART3_SendStr(char str[]){
+    uint8_t send = 0;
+		while(str[send] != '\0'){
+			if ((USART3->ISR & USART_ISR_TC) == USART_ISR_TC){
+				USART3->TDR = str[send++];
+			}
+		}
+	USART3->ICR |= USART_ICR_TCCF;
+}
+
+void USART3_4_IRQHandler(void){
+	uint8_t rx_val = (uint8_t)(USART3->RDR); /* Receive data, clear flag */
+		if(led == NULL && rx_val >=65 && rx_val <= 122){
+			led = rx_val;
+			UART3_SendStr("\nCMD:: ");
+		}else if(rx_val >= 48 && rx_val <= 50){
+		  operation	= rx_val;
+			newdata = 1;
+		}	 
+}
+
+
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -60,55 +91,98 @@ void SystemClock_Config(void);
   * @brief  The application entry point.
   * @retval int
   */
+	
+
+	
 int main(void)
 {
-  HAL_Init(); // Reset of all peripherals, init the Flash and Systick
-  SystemClock_Config(); //Configure the system clock
-  /* This example uses HAL library calls to control
-  the GPIOC peripheral. You’ll be redoing this code
-  with hardware register access. */
-  RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable the GPIOC clock in the RCC
-  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; 
-  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; // Enable the TIM2 & TIM3 clock in the RCC
-  //uint32_t click = 0;
-  
-  GPIOC->MODER |= (0x1<<13) |  (0x1<<15) |  (0x1<<16) | (0x1<<18);
-  GPIOC->MODER &= ~(0x1<<12);
-  GPIOC->MODER &= ~(0x1<<14);
-  GPIOC->OTYPER &= ~(0b1<<6) | (0b1<<7) | (0b1<<8) | (0b1<<9);
-  GPIOC->OSPEEDR &= ~(0x1<<12) | (0x0<<13) | (0x1<<14) | (0x0<<15) | (0x1<<16) | (0x0<<17) | (0x1<<18) | (0x0<<19);
-  GPIOC->PUPDR &= ~(0x1<<12) | (0x1<<13) | (0x1<<14) | (0x1<<15) | (0x1<<16) | (0x1<<17) | (0x1<<18) | (0x1<<19);
-  
-  TIM2->PSC = 0x1F3F;
-  TIM2->ARR = 0xFA;
-  TIM2->DIER |= (0x1<<0);
-  TIM2->CR1 |= (0x1<<0);
-  
-  TIM3->PSC = 499;
-  TIM3->ARR = 20;
-  
-  TIM3->CCMR1 &= ~((1<<0)|(1<<1)|(1<<9)|(1<<8)|(1<<12));
-  TIM3->CCMR1 |= ((1<<4)|(1<<5)|(1<<6)|(1<<13)|(1<<14)|(1<<3)|(1<<11));
-  TIM3->CCER |= (0x1<<0) | (0x1<<4);
-  
-  TIM3->CCR1 |= 19;
-  TIM3->CCR2 |= 1;
-  
-  TIM3->DIER |= (0x1<<0);
-  TIM3->CR1 |= (0x1<<0);
-  GPIOC->AFR[0] &= ~(GPIO_AFRL_AFSEL6 | GPIO_AFRL_AFSEL7) ;
-  
-  NVIC_EnableIRQ(TIM2_IRQn);
-  NVIC_SetPriority(TIM2_IRQn,1);
-  
-  GPIOC->ODR |= (0x1<<9);
+  HAL_Init();
+  SystemClock_Config();
 
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+	RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+	USART3->BRR |= 69;
+	USART3->CR1 |= ( USART_CR1_TE | USART_CR1_UE);
+	USART3->CR1 |= USART_CR1_RXNEIE | USART_CR1_RE;
+	
+	NVIC_EnableIRQ(USART3_4_IRQn);
+	NVIC_SetPriority(USART3_4_IRQn,1);
 
-  
-  while (1) {
+  GPIOC->MODER |= ((1<<9)|(1<<11));
+	GPIOC->MODER |= ((1 << 12)|(1 << 14) | (1 << 16) | (1 << 18));
+	GPIOC->MODER &= ~((1 << 13)|(1 << 15) | (1 << 17) | (1 << 19));
+	
+	GPIOC->OTYPER &= ~((1 << 6)|(1 << 7) | (1 << 8) | (1 << 9));
+	
+	GPIOC->OSPEEDR &= ~((1 << 12)|(1 << 14)|(1 << 16)|(1 << 18 ));
+	
+	GPIOC->PUPDR &= ~((1 << 13)|(1 << 15)|(1 << 12)|(1 << 14)|(1 << 16) | (1 << 18)|(1 << 17) | (1 << 19));
 
-
+	
+	GPIOC->AFR[0] |= ((1<<16)|(1<<20));
+	
+	GPIOC->ODR |= ((1<<6)|(1<<7)|(1<<8)|(1<<9));
+	
+	uint32_t led_pin = 0;
+	UART3_SendStr("\nCMD:: ");
+  while (1)
+  {		
+		//USART3->TDR = (1<<6);
+		if(newdata == 1){
+				USART3->TDR = operation;
+				USART3->TDR = led;
+				switch(led){
+				case 82:
+					if(operation == 48){
+						GPIOC->ODR &= ~(1<<6);
+					}else if(operation == 49){
+						GPIOC->ODR |= (1<<6);
+					}else if(operation == 50){
+						GPIOC->ODR ^= (1<<6);
+					}
+					break;
+				case 66:
+					if(operation == 48){
+						GPIOC->ODR &= ~(1<<7);
+					}else if(operation == 49){
+						GPIOC->ODR |= (1<<7);
+					}else if(operation == 50){
+						GPIOC->ODR ^= (1<<7);
+					}
+					break;
+				case 71:
+					if(operation == 48){
+						GPIOC->ODR &= ~(1<<9);
+					}else if(operation == 49){
+						GPIOC->ODR |= (1<<9);
+					}else if(operation == 50){
+						GPIOC->ODR ^= (1<<9);
+					}
+					break;
+				case 79:
+					if(operation == 48){
+						GPIOC->ODR &= ~(1<<8);
+					}else if(operation == 49){
+						GPIOC->ODR |= (1<<8);
+					}else if(operation == 50){
+						GPIOC->ODR ^= (1<<8);
+					}
+					break;
+				default:
+					if(led >= 65 && led <= 122 ){
+						UART3_SendStr("Invalid Input\n");
+					}
+					break;
+				}
+			
+				UART3_SendStr("\nCMD:: ");
+				newdata = NULL;
+				led = NULL;
+				operation = NULL;
+		}				
+		
   }
+
 }
 
 /**
@@ -147,10 +221,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void TIM2_IRQHandler(void){
-	GPIOC->ODR ^= (0x1<<8) | (0x1<<9);
-	TIM2->SR &= ~(0x1<<0);
-}
 
 /* USER CODE END 4 */
 
