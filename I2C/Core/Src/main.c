@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+ /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -72,83 +72,86 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN;
-RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN;
+	RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
 
-  /* USER CODE END SysInit */
+		/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  /* USER CODE BEGIN 2 */
+		/* Initialize all configured peripherals */
+		/* USER CODE BEGIN 2 */
 
-GPIO_InitTypeDef initLED = {GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_6 | GPIO_PIN_7,
-GPIO_MODE_OUTPUT_PP,
-GPIO_SPEED_FREQ_LOW,
-GPIO_NOPULL};
-HAL_GPIO_Init(GPIOC, &initLED);
+	GPIO_InitTypeDef initLED = {GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_6 | GPIO_PIN_7,
+	GPIO_MODE_OUTPUT_PP,
+	GPIO_SPEED_FREQ_LOW,
+	GPIO_NOPULL};
+	HAL_GPIO_Init(GPIOC, &initLED);
 
-//Set PB11 to alternate function mode, open-drain output type, and select I2C2_SDA as its alternate function
-GPIOB->MODER |= (0x1<<23);
-GPIOB->MODER &= ~(0x1<<22);
-GPIOB->OTYPER |= (0x1<<11);
-GPIOB->AFR[1] |= (1 << 12);
+	//Set PB11 to alternate function mode, open-drain output type, and select I2C2_SDA as its alternate function
+	GPIOB->MODER |= (0x1<<23);
+	GPIOB->MODER &= ~(0x1<<22);
+	GPIOB->OTYPER |= (0x1<<11);
+	GPIOB->AFR[1] |= (1 << 12);
 
-//Set PB13 to alternate function mode, open-drain output type, and select I2C2_SCL as its alternate function
-GPIOB->MODER |= (0x1<<27);
-GPIOB->MODER &= ~(0x1<<26);
-GPIOB->OTYPER |= (0x1<<13);
-GPIOB->AFR[1] |= (5 << 20);
+	//Set PB13 to alternate function mode, open-drain output type, and select I2C2_SCL as its alternate function
+	GPIOB->MODER |= (0x1<<27);
+	GPIOB->MODER &= ~(0x1<<26);
+	GPIOB->OTYPER |= (0x1<<13);
+	GPIOB->AFR[1] |= (5 << 20);
 
-//Set PB14 to output mode, push-pull output type, and initialize/set the pin high
-GPIOB->MODER |= (0x1<<28);
-GPIOB->MODER &= ~(0x1<<29);
-GPIOB->OTYPER &= ~(0x0<<14);
-GPIOB->ODR |= (0x1<<14);
+	//Set PB14 to output mode, push-pull output type, and initialize/set the pin high
+	GPIOB->MODER |= (0x1<<28);
+	GPIOB->MODER &= ~(0x1<<29);
+	GPIOB->OTYPER &= ~(0x0<<14);
+	GPIOB->ODR |= (0x1<<14);
 
-//Set PC0 to output mode, push-pull output type, and initialize/set the pin high
-GPIOC->MODER |= (0x1<<0);
-GPIOC->MODER &= ~(0x1<<1);
-GPIOC->OTYPER &= ~(0x0<<0);
-GPIOC->ODR |= (0x1<<0);
+	//Set PC0 to output mode, push-pull output type, and initialize/set the pin high
+	GPIOC->MODER |= (0x1<<0);
+	GPIOC->MODER &= ~(0x1<<1);
+	GPIOC->OTYPER &= ~(0x0<<0);
+	GPIOC->ODR |= (0x1<<0);
 
+	GPIOC->ODR |= (1<<6);
+	GPIOC->ODR |= (1<<7);
 
-I2C2->TIMINGR |= ((0x01<<28)| (0x04<<20) | (0x02<<16) | (0xF<<8) | (0x13<<0)); //Set the parameters in the TIMINGR register to use 100 kHz standard-mode I2C
-I2C2->CR1 = I2C_CR1_PE; //Enabling I2C2 Peripheral
+	I2C2->TIMINGR |= ((0x01<<28)| (0x04<<20) | (0x02<<16) | (0xF<<8) | (0x13<<0)); //Set the parameters in the TIMINGR register to use 100 kHz standard-mode I2C
+	I2C2->CR1 = I2C_CR1_PE; //Enabling I2C2 Peripheral
 
-I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
+	I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
 
-I2C2->CR2 |= (1 << 16) | (0x69 << 1);
+	I2C2->CR2 |= (1 << 16) | (0x69 << 1);
 
-I2C2->CR2 &= ~(0x1<<10);
+	I2C2->CR2 &= ~(0x1<<10);
 
-I2C2->CR2 |= (0x1<<13);
+	I2C2->CR2 |= (0x1<<13);
 
-while (!(I2C2->ISR & I2C_ISR_TXIS))
-;
-if (I2C2->ISR & I2C_ISR_NACKF)
-GPIOC->ODR |= (1 << 6);
-I2C2->TXDR |= 0x0F;
-while (!(I2C2->ISR & I2C_ISR_TC))
-;
-I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
-I2C2->CR2 |= (1 << 16) | (0x69 << 1);
+	while (!(I2C2->ISR & I2C_ISR_TXIS))
+	;
+	if (I2C2->ISR & I2C_ISR_NACKF)
+		GPIOC->ODR ^= (1 << 6);
+	I2C2->TXDR |= 0x0F;
+	while (!(I2C2->ISR & I2C_ISR_TC))
+	;
+	I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
+	I2C2->CR2 |= (1 << 16) | (0x69 << 1);
 
-I2C2->CR2 &= ~(0x1<<10);
-I2C2->CR2 |= (0x1<<13);
+	I2C2->CR2 |=(0x1<<10);
+	I2C2->CR2 |= (0x1<<13);
 
-while (!(I2C2->ISR & I2C_ISR_RXNE))
-;
-if (I2C2->ISR & I2C_ISR_NACKF)
-GPIOC->ODR |= (1 << 6);
-while (!(I2C2->ISR & I2C_ISR_TC))
-;
-if (I2C2->RXDR == 0xD3)
-GPIOC->ODR |= (1 << 7);
+	while (!(I2C2->ISR & I2C_ISR_RXNE))
+	;
+	if (I2C2->ISR & I2C_ISR_NACKF)
+		GPIOC->ODR ^= (1 << 6);
+	while (!(I2C2->ISR & I2C_ISR_TC))
+	;
+	if (I2C2->RXDR == 0xD3)
+		HAL_Delay(200);
+		GPIOC->ODR ^= (1 << 7);
 
-I2C2->CR2 |= I2C_CR2_STOP;
-  /* USER CODE END 2 */
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-}
+	I2C2->CR2 |= I2C_CR2_STOP;
+		/* USER CODE END 2 */
+		/* Infinite loop */
+		/* USER CODE BEGIN WHILE */
+	}
 
 /**
   * @brief System Clock Configuration
