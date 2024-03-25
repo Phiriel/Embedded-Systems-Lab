@@ -1,4 +1,4 @@
- /* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -60,7 +60,7 @@ void SystemClock_Config(void);
   * @retval int
   */
 char recieve;
-
+	
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -71,87 +71,238 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN;
+  SystemClock_Config();
+	
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+		
+  /* USER CODE END SysInit */
 
-		/* USER CODE END SysInit */
-
-		/* Initialize all configured peripherals */
-		/* USER CODE BEGIN 2 */
-
-	GPIO_InitTypeDef initLED = {GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_6 | GPIO_PIN_7,
-	GPIO_MODE_OUTPUT_PP,
-	GPIO_SPEED_FREQ_LOW,
-	GPIO_NOPULL};
-	HAL_GPIO_Init(GPIOC, &initLED);
-
+  /* Initialize all configured peripherals */
+  /* USER CODE BEGIN 2 */
+	
+	GPIO_InitTypeDef X = {GPIO_PIN_8 | GPIO_PIN_9|GPIO_PIN_6|GPIO_PIN_7, GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW,GPIO_NOPULL};
+	HAL_GPIO_Init(GPIOC, &X);
+	
 	//Set PB11 to alternate function mode, open-drain output type, and select I2C2_SDA as its alternate function
-	GPIOB->MODER |= (0x1<<23);
-	GPIOB->MODER &= ~(0x1<<22);
+	GPIOB->MODER |= (0x1<<22);
+	GPIOB->MODER &= ~(0x1<<23);
 	GPIOB->OTYPER |= (0x1<<11);
-	GPIOB->AFR[1] |= (1 << 12);
-
+	GPIOB->AFR[1] &= ~((1<<12) | (1<<13) | (1<<14));
+	GPIOB->AFR[1] |= (1<<15);
+	
 	//Set PB13 to alternate function mode, open-drain output type, and select I2C2_SCL as its alternate function
-	GPIOB->MODER |= (0x1<<27);
-	GPIOB->MODER &= ~(0x1<<26);
+	GPIOB->MODER |= (0x1<<26);
+	GPIOB->MODER &= ~(0x1<<27);
 	GPIOB->OTYPER |= (0x1<<13);
-	GPIOB->AFR[1] |= (5 << 20);
-
+	GPIOB->AFR[1] &= ~((1<<20) | (1<<22));
+	GPIOB->AFR[1] |= (1<<23) | (1<<21);
+	
 	//Set PB14 to output mode, push-pull output type, and initialize/set the pin high
-	GPIOB->MODER |= (0x1<<28);
-	GPIOB->MODER &= ~(0x1<<29);
+	GPIOB->MODER |= (0x1<<29);
+	GPIOB->MODER &= ~(0x1<<28);
 	GPIOB->OTYPER &= ~(0x0<<14);
 	GPIOB->ODR |= (0x1<<14);
+	
+	//Set the parameters in the TIMINGR register to use 100 kHz standard-mode I2C
+  I2C2->TIMINGR |= (0x1  << I2C_TIMINGR_PRESC_Pos);  
+  I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);  
+  I2C2->TIMINGR |= (0x0F << I2C_TIMINGR_SCLH_Pos);  
+  I2C2->TIMINGR |= (0x2  << I2C_TIMINGR_SDADEL_Pos);
+  I2C2->TIMINGR |= (0x4  << I2C_TIMINGR_SCLDEL_Pos);
 
-	//Set PC0 to output mode, push-pull output type, and initialize/set the pin high
-	GPIOC->MODER |= (0x1<<0);
-	GPIOC->MODER &= ~(0x1<<1);
-	GPIOC->OTYPER &= ~(0x0<<0);
-	GPIOC->ODR |= (0x1<<0);
-
-	GPIOC->ODR |= (1<<6);
-	GPIOC->ODR |= (1<<7);
-
-	I2C2->TIMINGR |= ((0x01<<28)| (0x04<<20) | (0x02<<16) | (0xF<<8) | (0x13<<0)); //Set the parameters in the TIMINGR register to use 100 kHz standard-mode I2C
 	I2C2->CR1 = I2C_CR1_PE; //Enabling I2C2 Peripheral
+		
+	testI2C();
 
-	I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
+  while(1){
+    gyro();
+  }
+	
+  /* USER CODE END 2 */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+}
 
-	I2C2->CR2 |= (1 << 16) | (0x69 << 1);
+//part1
+void testI2C(void){
+  // Clear the NBYTES and SADD bit fields
+  I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
 
-	I2C2->CR2 &= ~(0x1<<10);
+  I2C2->CR2 |= (slvAddr << I2C_CR2_SADD_Pos);   // Set the L3GD20 slave address = slvAddr
+  I2C2->CR2 |= (noOfBits  << I2C_CR2_NBYTES_Pos); // Set the number of bytes to transmit = noOfBits
+  I2C2->CR2 |= (I2C_CR2_RD_WRN_Msk);         // Set the RD_WRN to read operation
+  I2C2->CR2 |= (I2C_CR2_START_Msk);
 
-	I2C2->CR2 |= (0x1<<13);
-
-	while (!(I2C2->ISR & I2C_ISR_TXIS))
-	;
-	if (I2C2->ISR & I2C_ISR_NACKF)
-		GPIOC->ODR ^= (1 << 6);
-	I2C2->TXDR |= 0x0F;
-	while (!(I2C2->ISR & I2C_ISR_TC))
-	;
-	I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
-	I2C2->CR2 |= (1 << 16) | (0x69 << 1);
-
-	I2C2->CR2 |=(0x1<<10);
-	I2C2->CR2 |= (0x1<<13);
-
-	while (!(I2C2->ISR & I2C_ISR_RXNE))
-	;
-	if (I2C2->ISR & I2C_ISR_NACKF)
-		GPIOC->ODR ^= (1 << 6);
-	while (!(I2C2->ISR & I2C_ISR_TC))
-	;
-	if (I2C2->RXDR == 0xD3)
-		HAL_Delay(200);
-		GPIOC->ODR ^= (1 << 7);
-
-	I2C2->CR2 |= I2C_CR2_STOP;
-		/* USER CODE END 2 */
-		/* Infinite loop */
-		/* USER CODE BEGIN WHILE */
+  if((I2C2->ISR & I2C_ISR_TXIS) == I2C_ISR_TXIS){
+		GPIOC->ODR ^= (1<<7);
+		I2C1->TXDR = 0x0F;
+		
+		if((I2C2->ISR & I2C_ISR_TC) == I2C_ISR_TC){
+			I2C2->CR2 |= (0x1<<13);
+			
+			I2C2->CR2 |= (0x1<<10);
+			if((I2C2->ISR & I2C_ISR_RXNE) == I2C_ISR_RXNE){
+				if((I2C2->ISR & I2C_ISR_TC) == I2C_ISR_TC){
+					if(I2C1->RXDR == 0xD3){
+						I2C2->CR2 |= (0x1<<13);
+						GPIOC->ODR ^= (1<<6);
+					}
+				}
+			}
+		}
 	}
+}
+
+void initGyro(void){
+  I2C2->CR2 |= (0xD2 << I2C_CR2_SADD_Pos);  
+  I2C2->CR2 |= (0x2  << I2C_CR2_NBYTES_Pos);
+  I2C2->CR2 &= ~(I2C_CR2_RD_WRN_Msk);
+  I2C2->CR2 |= (I2C_CR2_START_Msk);
+  
+  // Wait until TXIS or NACKF flags are set (1)
+  while(1) {
+    if (I2C2->ISR & I2C_ISR_TXIS) {
+      I2C2->TXDR = 0x20;
+      break;
+    }
+
+    if (I2C2->ISR & I2C_ISR_NACKF) {
+    }
+  }
+
+// Wait again until TXIS or NACKF flags are set (2)
+  while(1) {
+    if (I2C2->ISR & I2C_ISR_TXIS) {
+      I2C2->TXDR = 0x0B;
+      break;
+    }
+  }
+
+  // Wait for TC flag is set
+  while(1) {
+    if (I2C2->ISR & I2C_ISR_TC) {
+      break;
+    }
+  }
+}
+
+uint8_t x1;
+uint8_t x2;
+int16_t x;
+int16_t x_dir = 0;
+
+uint8_t y1;
+uint8_t y2;
+int16_t y;
+int16_t y_dir = 0;
+
+void gyro(void) {
+      I2C2->CR2 &= ~((0x7F << 16) | (0x3FF << 0));
+
+      I2C2->CR2 |= (0xD2 << I2C_CR2_SADD_Pos);   // Set the L3GD20 slave address = slvAddr
+      I2C2->CR2 |= (0x1  << I2C_CR2_NBYTES_Pos); // Set the number of bytes to transmit = noOfBits
+      I2C2->CR2 |= (I2C_CR2_RD_WRN_Msk);         // Set the RD_WRN to read operation
+      I2C2->CR2 |= (I2C_CR2_START_Msk);
+
+      while(1) {
+            // Continue if TXIS flag is set
+        if ((I2C2->ISR & I2C_ISR_TXIS)) {
+          I2C2->TXDR = 0x28; // Set I2C2->TXDR = txdrData
+          break;
+        }
+      }
+
+      // Wait for TC flag is set
+      while(1) {
+        if (I2C2->ISR & I2C_ISR_TC) {
+          break;
+        }
+      }
+      I2C2->RXDR = 0xD2;
+
+      while(1) {
+            // Continue if TXIS flag is set
+        if ((I2C2->ISR & I2C_ISR_TXIS)) {
+          I2C2->TXDR = 0x29; // Set I2C2->TXDR = txdrData
+          break;
+        }
+      }
+
+      // Wait for TC flag is set
+      while(1) {
+        if (I2C2->ISR & I2C_ISR_TC) {
+          break;
+        }
+      }
+      I2C2->RXDR = 0xD2;
+      
+      while(1) {
+            // Continue if TXIS flag is set
+        if ((I2C2->ISR & I2C_ISR_TXIS)) {
+          I2C2->TXDR = 0x2A; // Set I2C2->TXDR = txdrData
+          break;
+        }
+      }
+
+      // Wait for TC flag is set
+      while(1) {
+        if (I2C2->ISR & I2C_ISR_TC) {
+          break;
+        }
+      }
+      I2C2->RXDR = 0xD2;
+      
+      while(1) {
+            // Continue if TXIS flag is set
+        if ((I2C2->ISR & I2C_ISR_TXIS)) {
+          I2C2->TXDR = 0x2B; // Set I2C2->TXDR = txdrData
+          break;
+        }
+      }
+
+      // Wait for TC flag is set
+      while(1) {
+        if (I2C2->ISR & I2C_ISR_TC) {
+          break;
+        }
+      }
+      I2C2->RXDR = 0xD2;
+      
+            
+      x = (x2 << 8) | (x1 << 0);
+      x_dir += x;
+      
+      y = (y2 << 8) | (y1 << 0);
+      y_dir += y;
+      
+      /***********************************************************************/
+      
+      if (x_dir < -20) {
+            GPIOC->ODR |= (1<<8);
+            GPIOC->ODR &= ~(1<<9);
+      } else if (x_dir > 20){
+            GPIOC->ODR |= (1<<9);
+            GPIOC->ODR &= ~(1<<8);
+      } else{
+            GPIOC->ODR |= (1<<8);
+            GPIOC->ODR |= (1<<9);
+      }
+      
+      if (y_dir < -20) {
+            GPIOC->ODR |= (1<<6);
+            GPIOC->ODR &= ~(1<<7);
+      } else if((y_dir > 20)){
+            GPIOC->ODR |= (1<<7);
+            GPIOC->ODR &= ~(1<<6);
+      }else{
+            GPIOC->ODR |= (1<<6);
+            GPIOC->ODR |= (1<<7);
+      }
+      
+      HAL_Delay(100);
+}
 
 /**
   * @brief System Clock Configuration
@@ -222,3 +373,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
