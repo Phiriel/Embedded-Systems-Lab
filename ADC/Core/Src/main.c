@@ -131,6 +131,7 @@ int main(void)
     
     for(i=0;i<32;i++){
       DAC1->DHR8R1 = sine_table[i];
+      HAL_Delay(1);
     }
 
   }
