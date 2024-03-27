@@ -116,9 +116,8 @@ int main(void)
     }else if(adc < 51){
       GPIOC->ODR |= (0x1 << 9);
       GPIOC->ODR &= ~((0x1 << 7) | (0x1 << 8) | (0x1 << 6));
-    }else{
-      GPIOC->ODR &= ~((0x1 << 6) | (0x1 << 7) | (0x1 << 8) | (0x1 << 9));
-    }
+    }else
+    GPIOC->ODR &= ~((0x1 << 6) | (0x1 << 7) | (0x1 << 8) | (0x1 << 9));
   }
 
 	
