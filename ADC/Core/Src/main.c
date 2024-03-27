@@ -72,7 +72,7 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN;
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIOAEN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
@@ -90,6 +90,9 @@ int main(void)
   GPIOC->MODER |= ((0x01 << 8) | (0x01 << 9));
   GPIOC->PUPDR |= ((0x01 << 8) | (0x01 << 9));
 
+  GPIOA->MODER |= ((0x01 << 8) | (0x01 << 9));
+  GPIOA->PUPDR |= ((0x01 << 8) | (0x01 << 9));
+
   ADC->CFGR1 |= (0x1 << 13);
   ADC->CFGR1 &= ~((0x1 << 10) | (0x1 << 11));
   ADC->CFGR1 &= ~(0x1 << 4);
@@ -100,7 +103,13 @@ int main(void)
   ADC->CR |= (0x1 << 0);
   ADC->CR |= (0x1 << 2);
 
+  DAC1->CR |= ((0x1<<3) | (0x1<<4) | (0x1<<5) | (0x1<<0));
+
+  const uint8_t sine_table[32] = {127,151,175,197,216,232,244,251,254,251,244,
+      232,216,197,175,151,127,102,78,56,37,21,9,2,0,2,9,21,37,56,78,102};
+
   uint16_t adc = 0;
+  unit16_t i = 0;
 
   while(1){
     adc = ADC->DR;
@@ -116,8 +125,14 @@ int main(void)
     }else if(adc < 51){
       GPIOC->ODR |= (0x1 << 9);
       GPIOC->ODR &= ~((0x1 << 7) | (0x1 << 8) | (0x1 << 6));
-    }else
-    GPIOC->ODR &= ~((0x1 << 6) | (0x1 << 7) | (0x1 << 8) | (0x1 << 9));
+    }else{
+      GPIOC->ODR &= ~((0x1 << 6) | (0x1 << 7) | (0x1 << 8) | (0x1 << 9));
+    }
+    
+    for(i=0;i<32;i++){
+      DAC1->DHR8R1 = sine_table[i];
+    }
+
   }
 
 	
