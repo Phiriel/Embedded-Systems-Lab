@@ -3,12 +3,18 @@
  * Auto generated Run-Time-Environment Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'Lab1' 
- * Target:  'Lab1' 
+ * Project: 'Lab04' 
+ * Target:  'Lab04' 
  */
 
 #ifndef RTE_COMPONENTS_H
 #define RTE_COMPONENTS_H
+
+
+/*
+ * Define the Device Header File: 
+ */
+#define CMSIS_device_header "stm32f0xx.h"
 
 
 
